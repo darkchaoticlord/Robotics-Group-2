@@ -39,7 +39,7 @@ def turn_right():
 
 def main():
     reset_encoders()
-    drive_straight(5)
+    drive_straight(10)
     reset_encoders()
     turn_right()
 
