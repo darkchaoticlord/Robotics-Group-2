@@ -27,7 +27,7 @@ def drive_straight(cm):
 
     BP.set_motor_power(BP.PORT_A, 50)
     BP.set_motor_power(BP.PORT_B, 50)
-    while encoder_a < 360 and encoder_b < 360:
+    while encoder_a < 100 and encoder_b < 100:
         encoder_a, encoder_b = get_encoding()
 
     BP.set_motor_power(BP.PORT_A, 0)
