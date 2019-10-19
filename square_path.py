@@ -37,10 +37,12 @@ def turn_right():
     BP.set_motor_power(BP.PORT_A, 0)
     BP.set_motor_power(BP.PORT_B, 0)
 
-
-if(__name__ == "__main__"):
+def main():
     reset_encoders()
     drive_straight(5)
     reset_encoders()
     turn_right()
+
+if __name__ == "__main__":
+    main()
 
