@@ -1,5 +1,7 @@
 import brickpi3
+
 BP = brickpi3.BrickPi3()
+
 
 # Reset motor encoders to 0
 def reset_encoders():
@@ -14,8 +16,10 @@ def get_encoding():
 
     return (encoder_a, encoder_b)
 
-def convert_cm_to_encoding():
-    pass
+
+def convert_cm_to_encoding(cm):
+    return 0
+
 
 # Drive in straight line
 def drive_straight(cm):
@@ -29,6 +33,7 @@ def drive_straight(cm):
     BP.set_motor_power(BP.PORT_A, 0)
     BP.set_motor_power(BP.PORT_B, 0)
 
+
 def turn_right():
     encoder_a, encoder_b = get_encoding()
 
@@ -40,12 +45,12 @@ def turn_right():
     BP.set_motor_power(BP.PORT_A, 0)
     BP.set_motor_power(BP.PORT_B, 0)
 
+
 def main():
     reset_encoders()
     drive_straight(10)
     reset_encoders()
-    turn_right()
+
 
 if __name__ == "__main__":
     main()
-
