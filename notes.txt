@@ -1,0 +1,12 @@
+DPS:
+Motor increases power when there is more resistance in an attempt to maintain the same speed. This was observed by the sound of the motor.
+
+Power:
+Seems to have a similar effect to the DPS. From the printed results the power remains constant.
+
+Position:
+It is only concerned with reaching the same distance as the other wheel, it doesnt increase power in the same manner as the other two programs. When you relesea the wheel it will continue turning until it reaches its goal
+
+
+
+

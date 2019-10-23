@@ -42,6 +42,7 @@ try:
             print(error)
             power = 0
         BP.set_motor_power(RIGHT_MOTOR, power)
+        print("Right Motor Status: ", BP.get_motor_status(RIGHT_MOTOR))
         time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
 
 except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
