@@ -1,13 +1,36 @@
 import brickpi3
 import math
 import time
+import numpy as np
 
 BP = brickpi3.BrickPi3()
 
 ENCODER_VAL_FOR_ONE_CM = 27
 LEFT_MOTOR = BP.PORT_B
 RIGHT_MOTOR = BP.PORT_A
+NUM_OF_PARTICLES = 100
 
+# Class representing the Particle in our particle filter
+class Particle:
+
+    def __init__(self, x, y, theta, weight):
+        self.x = x
+        self.y = y
+        self.theta = theta
+        self.weight = weight
+
+    #NOTE: THETA has not been capped between 0 and 360 -> will cause problems
+
+    def update_linear_motion(self, D, std_dev_e, std_dev_f):
+        x += (D + get_gaussian_error(std_dev_e))*np.cos(theta)
+        y += (D + get_gaussian_error(std_dev_e))*np.sin(theta)
+        theta += theta + get_gaussian_error(std_dev_f)
+
+    def update_rotation_motion(self, alpha, std_dev_g):
+        theta += alpha + get_gaussian_error(std_dev_g):
+    
+    def get_gaussian_error(std_dev):
+        return np.random.normal(0, std_dev)
 
 # Reset motor encoders to 0
 def reset_encoders():
@@ -39,11 +62,14 @@ def drive_straight(distance_cm):
 def convert_angle_to_distance(angle_deg):
     return 7 * math.pi / 180 * angle_deg
 
-def turn_left_90():
+def turn_anticlockwise(angle_deg):
     encoder_right, encoder_left = get_encoding()
 
     BP.set_motor_dps(LEFT_MOTOR, 100)
     BP.set_motor_dps(RIGHT_MOTOR, -100)
+
+    #TODO: Properly calibrate the ENCODER_VAL (one for straight line and one for rotation?)
+    print(convert_angle_to_distance(angle_deg) * ENCODER_VAL_FOR_ONE_CM)
     encoded = 280 # Value based off trial and error
     while encoder_left >= (-1 * encoded) or encoder_right <= encoded:
         encoder_right, encoder_left = get_encoding()
@@ -54,6 +80,9 @@ def turn_left_90():
 
 def main():
     try:
+        pf_set = [Particle(0,0,0,1/NUM_PARTICLES) for i in range(NUM_OF_PARTICLES)]
+
+        print("drawLine:" + str((5,5,45,5))
         for _ in range(4):
 
             # Theres a bug that occurs if we dont sleep between commands to the BrickPi. It doesnt register the commands we send it and block. Hence the sleeps in between the commands
@@ -64,7 +93,7 @@ def main():
 
             reset_encoders()
             time.sleep(0.5)
-            turn_left_90()
+            turn_anticlockwise(90)
 
     except KeyboardInterrupt:
         BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
