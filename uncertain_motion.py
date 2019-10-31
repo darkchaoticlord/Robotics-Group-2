@@ -1,7 +1,9 @@
 import brickpi3
 import math
 import time
+import random
 import numpy as np
+import copy
 
 BP = brickpi3.BrickPi3()
 
@@ -22,15 +24,45 @@ class Particle:
     #NOTE: THETA has not been capped between 0 and 360 -> will cause problems
 
     def update_linear_motion(self, D, std_dev_e, std_dev_f):
-        x += (D + get_gaussian_error(std_dev_e))*np.cos(theta)
-        y += (D + get_gaussian_error(std_dev_e))*np.sin(theta)
-        theta += theta + get_gaussian_error(std_dev_f)
+        self.x += (D + self.get_gaussian_error(std_dev_e)) * np.cos(math.radians(self.theta))
+        self.y += (D + self.get_gaussian_error(std_dev_e)) * np.sin(math.radians(self.theta))
+        self.theta += self.get_gaussian_error(std_dev_f)
 
     def update_rotation_motion(self, alpha, std_dev_g):
-        theta += alpha + get_gaussian_error(std_dev_g):
+        self.theta += alpha + self.get_gaussian_error(std_dev_g)
     
-    def get_gaussian_error(std_dev):
-        return np.random.normal(0, std_dev)
+    def get_gaussian_error(self, std_dev):
+        return random.gauss(0, std_dev)
+
+    def __str__(self):
+        return "({}, {}, {})".format(self.x, self.y, self.theta)
+
+class ParticleSet:
+
+    def __init__(self, particles):
+        self.particles = particles
+
+    def update_linear_motions(self, D, std_dev_e, std_dev_f):
+        for particle in self.particles:
+            particle.update_linear_motion(D, std_dev_e, std_dev_f)
+
+    def update_rotation_motions(self, alpha, std_dev_g):
+        for particle in self.particles:
+            particle.update_rotation_motion(alpha, std_dev_g)
+
+    def __str__(self):
+        return str([tuple(str(particle)) for particle in self.particles])
+
+class Line:
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    def __str__(self):
+        return "({}, {}, {}, {})".format(self.start[0], self.start[1], 
+                                         self.end[0], self.end[1])
+
 
 # Reset motor encoders to 0
 def reset_encoders():
@@ -62,13 +94,22 @@ def drive_straight(distance_cm):
 def convert_angle_to_distance(angle_deg):
     return 7 * math.pi / 180 * angle_deg
 
+def turn():
+    pass
+
+def turn_left(angle_deg):
+    turn(-angle_deg)
+
+def turn_right(angle_deg):
+    turn(angle_deg)
+
 def turn_anticlockwise(angle_deg):
     encoder_right, encoder_left = get_encoding()
 
     BP.set_motor_dps(LEFT_MOTOR, 100)
     BP.set_motor_dps(RIGHT_MOTOR, -100)
 
-    #TODO: Properly calibrate the ENCODER_VAL (one for straight line and one for rotation?)
+    # TODO: Properly calibrate the ENCODER_VAL (one for straight line and one for rotation?)
     print(convert_angle_to_distance(angle_deg) * ENCODER_VAL_FOR_ONE_CM)
     encoded = 280 # Value based off trial and error
     while encoder_left >= (-1 * encoded) or encoder_right <= encoded:
@@ -80,20 +121,31 @@ def turn_anticlockwise(angle_deg):
 
 def main():
     try:
-        pf_set = [Particle(0,0,0,1/NUM_PARTICLES) for i in range(NUM_OF_PARTICLES)]
+        particle_set = ParticleSet([Particle(0,0,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
+        # updated_values = [copy.deepcopy(particle_set)]
 
-        print("drawLine:" + str((5,5,45,5))
         for _ in range(4):
-
-            # Theres a bug that occurs if we dont sleep between commands to the BrickPi. It doesnt register the commands we send it and block. Hence the sleeps in between the commands
+            # Theres a bug that occurs if we dont sleep between 
+            # commands to the BrickPi. It doesnt register the 
+            # commands we send it and block. Hence the sleeps 
+            # in between the commands
             for _ in range(4):
-                reset_encoders()
-                time.sleep(0.5)
-                drive_straight(10)
+                # reset_encoders()
+                # time.sleep(0.5)
+                # D = 10
+                # drive_straight(D)
+                particle_set.update_linear_motions(100, 5, 5)
 
-            reset_encoders()
-            time.sleep(0.5)
-            turn_anticlockwise(90)
+                # updated_values.append(copy.deepcopy(particle_set))
+                #for ps in updated_values:
+                print("drawParticles:" + str(particle_set))
+
+
+            # reset_encoders()
+            # time.sleep(0.5)
+            # turn_anticlockwise(90)
+            particle_set.update_rotation_motions(-90, 5)
+
 
     except KeyboardInterrupt:
         BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
