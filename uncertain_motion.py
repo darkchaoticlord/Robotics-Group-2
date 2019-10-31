@@ -121,12 +121,21 @@ def turn_anticlockwise(angle_deg):
 
 def main():
     try:
-        particle_set = ParticleSet([Particle(0,0,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
-        print("drawParticles: " + str(particle_set))
-        print("\n")
+        particle_set = ParticleSet([Particle(100,500,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
+        # print("drawParticles: " + str(particle_set))
+        # print("\n")
         # updated_values = [copy.deepcopy(particle_set)]
 
         e, f, g = 1, 1, 1
+
+        # draw grid
+        for x in range(9):
+            value = x * 50 + 100
+            print("drawLine: ({}, 100, {}, 500)".format(value, value))
+
+        for y in range(9):
+            value = y * 50 + 100
+            print("drawLine: (100, {}, 500, {})".format(value, value))
 
         for _ in range(4):
             # Theres a bug that occurs if we dont sleep between 
@@ -138,11 +147,12 @@ def main():
                 # time.sleep(0.5)
                 # D = 10
                 # drive_straight(D)
-                particle_set.update_linear_motions(10, e, f)
+                particle_set.update_linear_motions(100, e, f)
 
                 # updated_values.append(copy.deepcopy(particle_set))
                 #for ps in updated_values:
                 print("drawParticles: " + str(particle_set))
+                time.sleep(1)
 
 
             # reset_encoders()
@@ -150,8 +160,8 @@ def main():
             # turn_anticlockwise(90)
             particle_set.update_rotation_motions(-90, g)
 
-        print("\n")
-        print("drawParticles: " + str(particle_set))
+        # print("\n")
+        # print("drawParticles: " + str(particle_set))
 
 
     except KeyboardInterrupt:
