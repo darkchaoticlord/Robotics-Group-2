@@ -26,16 +26,16 @@ class Particle:
     def update_linear_motion(self, D, std_dev_e, std_dev_f):
         self.x += (D + self.get_gaussian_error(std_dev_e)) * np.cos(math.radians(self.theta))
         self.y += (D + self.get_gaussian_error(std_dev_e)) * np.sin(math.radians(self.theta))
-        self.theta += self.get_gaussian_error(std_dev_f)
+        self.theta = (self.theta + self.get_gaussian_error(std_dev_f)) % 360
 
     def update_rotation_motion(self, alpha, std_dev_g):
-        self.theta += alpha + self.get_gaussian_error(std_dev_g)
+        self.theta = (self.theta + alpha + self.get_gaussian_error(std_dev_g)) % 360
     
     def get_gaussian_error(self, std_dev):
         return random.gauss(0, std_dev)
 
-    def __str__(self):
-        return "({}, {}, {})".format(self.x, self.y, self.theta)
+    def return_tuple(self):
+        return self.x, self.y, self.theta
 
 class ParticleSet:
 
@@ -51,17 +51,17 @@ class ParticleSet:
             particle.update_rotation_motion(alpha, std_dev_g)
 
     def __str__(self):
-        return str([tuple(str(particle)) for particle in self.particles])
+        return str([particle.return_tuple() for particle in self.particles])
 
-class Line:
-
-    def __init__(self, start, end):
-        self.start = start
-        self.end = end
-
-    def __str__(self):
-        return "({}, {}, {}, {})".format(self.start[0], self.start[1], 
-                                         self.end[0], self.end[1])
+# class Line:
+#
+#     def __init__(self, start, end):
+#         self.start = start
+#         self.end = end
+#
+#     def __str__(self):
+#         return "({}, {}, {}, {})".format(self.start[0], self.start[1],
+#                                          self.end[0], self.end[1])
 
 
 # Reset motor encoders to 0
@@ -83,7 +83,7 @@ def drive_straight(distance_cm):
 
     BP.set_motor_dps(LEFT_MOTOR, 300)
     BP.set_motor_dps(RIGHT_MOTOR, 300)
-    encoded = distance_cm * ENCODER_VAL_FOR_ONE_CM 
+    encoded = distance_cm * ENCODER_VAL_FOR_ONE_CM
     while encoder_right <= encoded and encoder_left <= encoded:
         encoder_right, encoder_left = get_encoding()
         #time.sleep(0.02) #Sleep to reduce load on pi
@@ -122,7 +122,11 @@ def turn_anticlockwise(angle_deg):
 def main():
     try:
         particle_set = ParticleSet([Particle(0,0,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
+        print("drawParticles: " + str(particle_set))
+        print("\n")
         # updated_values = [copy.deepcopy(particle_set)]
+
+        e, f, g = 1, 1, 1
 
         for _ in range(4):
             # Theres a bug that occurs if we dont sleep between 
@@ -134,20 +138,24 @@ def main():
                 # time.sleep(0.5)
                 # D = 10
                 # drive_straight(D)
-                particle_set.update_linear_motions(100, 5, 5)
+                particle_set.update_linear_motions(10, e, f)
 
                 # updated_values.append(copy.deepcopy(particle_set))
                 #for ps in updated_values:
-                print("drawParticles:" + str(particle_set))
+                print("drawParticles: " + str(particle_set))
 
 
             # reset_encoders()
             # time.sleep(0.5)
             # turn_anticlockwise(90)
-            particle_set.update_rotation_motions(-90, 5)
+            particle_set.update_rotation_motions(-90, g)
+
+        print("\n")
+        print("drawParticles: " + str(particle_set))
 
 
     except KeyboardInterrupt:
+        # pass
         BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
 
 
