@@ -122,11 +122,8 @@ def turn_anticlockwise(angle_deg):
 def main():
     try:
         particle_set = ParticleSet([Particle(100,500,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
-        # print("drawParticles: " + str(particle_set))
-        # print("\n")
-        # updated_values = [copy.deepcopy(particle_set)]
 
-        e, f, g = 5, 1, 2
+        e, f, g = 2, 1.5, 2
 
         # draw grid
         for x in range(9):
@@ -143,26 +140,21 @@ def main():
             # commands we send it and block. Hence the sleeps 
             # in between the commands
             for _ in range(4):
-                # reset_encoders()
-                # time.sleep(0.5)
-                # D = 10
-                # drive_straight(D)
-                particle_set.update_linear_motions(100, e, f)
+                reset_encoders()
+                time.sleep(0.5)
+                D = 10
+                drive_straight(D)
+                particle_set.update_linear_motions(10 * D, e, f)
 
-                # updated_values.append(copy.deepcopy(particle_set))
                 #for ps in updated_values:
                 print("drawParticles: " + str(particle_set))
                 time.sleep(1)
 
 
-            # reset_encoders()
-            # time.sleep(0.5)
-            # turn_anticlockwise(90)
+            reset_encoders()
+            time.sleep(0.5)
+            turn_anticlockwise(90)
             particle_set.update_rotation_motions(-90, g)
-
-        # print("\n")
-        # print("drawParticles: " + str(particle_set))
-
 
     except KeyboardInterrupt:
         # pass

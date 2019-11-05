@@ -44,30 +44,62 @@ def turn_anticlockwise(angle_deg):
     reset_encoders()
     encoder_right, encoder_left = get_encoding()
 
-    if(angle_deg == 0):
-        return
-
     BP.set_motor_dps(LEFT_MOTOR, -100)
     BP.set_motor_dps(RIGHT_MOTOR, 100)
 
     #TODO: Properly calibrate the ENCODER_VAL (one for straight line and one for rotation?)
     encoded = convert_angle_to_distance(angle_deg) * ENCODER_MULTIPLIER_ANGULAR
 
-    print(encoded)
-
     while encoder_left >= (-1 * encoded) or encoder_right <= encoded:
         encoder_right, encoder_left = get_encoding()
-        print(encoder_left, -1*encoded)
         #time.sleep(0.02) Sleep to reduce load on pi
 
     BP.set_motor_power(RIGHT_MOTOR, 0)
     BP.set_motor_power(LEFT_MOTOR, 0)
+
+def turn_clockwise(angle_deg):
+    reset_encoders()
+    encoder_right, encoder_left = get_encoding()
+
+    BP.set_motor_dps(LEFT_MOTOR, 100)
+    BP.set_motor_dps(RIGHT_MOTOR, -100)
+
+    encoded = convert_angle_to_distance(angle_deg) * ENCODER_MULTIPLIER_ANGULAR
+
+    while encoder_right >= (-1 * encoded) or encoder_left <= encoded:
+        encoder_right, encoder_left = get_encoding()
+        #time.sleep(0.02) Sleep to reduce load on pi
+
+    BP.set_motor_power(RIGHT_MOTOR, 0)
+    BP.set_motor_power(LEFT_MOTOR, 0)
+
+def turn(angle_deg):
+    if(angle_deg == 0):
+        return
+
+    if(angle_deg > 0):
+        turn_anticlockwise(angle_deg)
+
+    if(angle_deg < 0):
+        turn_clockwise(-1*angle_deg)
+    
+
 
 class State:
     def __init__(self, x, y, theta):
         self.x = x
         self.y = y
         self.theta = theta
+
+    # Keep any angle we move through between -pi and pi
+    def normalizePi(self, val):
+        while val <= -math.pi:
+            val += 2*math.pi
+
+        while val >= math.pi:
+            val -= 2*math.pi
+
+        return val
 
     # Uses the position based path planning equations from lecture 2 to calculate the motion required to reach positon (world_x, world_y)
     # Returns 3 values: beta = angle to rotate through to point towards desired point, 
@@ -78,14 +110,12 @@ class State:
 
         alpha = math.atan2(dy, dx)
 
-        beta = alpha - self.theta
+        beta = self.normalizePi(alpha - self.theta)
 
-        # Ensure that the angle we rotate through is between -pi and pi
-        while(beta < -math.pi):
-            beta += math.pi
-
-        while(beta > math.pi):
-            beta -= math.pi
+        print(dx)
+        print(dy)
+        print(math.degrees(alpha))
+        print(math.degrees(beta))
 
         d = math.sqrt(dx**2 + dy**2)
 
@@ -94,10 +124,10 @@ class State:
     def navigate_to_waypoint(self, world_x, world_y):
         angle_to_rotate, distance = self.calculate_motion(world_x, world_y)
 
-        print('turning: ', angle_to_rotate * 180/math.pi)
-        print('moving: ', distance)
+        print("turning: " + str(angle_to_rotate * 180/math.pi))
+        print("moving: " + str(distance))
         
-        turn_anticlockwise(angle_to_rotate * 180 / math.pi)
+        turn(angle_to_rotate * 180 / math.pi)
         time.sleep(0.02)
         drive_straight(distance)
 
@@ -105,6 +135,8 @@ class State:
         self.x = world_x
         self.y = world_y
         self.theta += angle_to_rotate
+
+        print(self.x, self.y, math.degrees(self.theta))
         
 
 def main():
