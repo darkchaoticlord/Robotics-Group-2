@@ -126,7 +126,7 @@ def main():
         # print("\n")
         # updated_values = [copy.deepcopy(particle_set)]
 
-        e, f, g = 1, 1, 1
+        e, f, g = 5, 1, 2
 
         # draw grid
         for x in range(9):

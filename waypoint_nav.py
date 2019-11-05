@@ -5,7 +5,8 @@ import numpy as np
 
 BP = brickpi3.BrickPi3()
 
-ENCODER_VAL_FOR_ONE_CM = 27
+ENCODER_MULTIPLIER_LINEAR = 27
+ENCODER_MULTIPLIER_ANGULAR = 25
 LEFT_MOTOR = BP.PORT_B
 RIGHT_MOTOR = BP.PORT_A
 
@@ -28,7 +29,7 @@ def drive_straight(distance_cm):
 
     BP.set_motor_dps(LEFT_MOTOR, 300)
     BP.set_motor_dps(RIGHT_MOTOR, 300)
-    encoded = distance_cm * ENCODER_VAL_FOR_ONE_CM 
+    encoded = distance_cm * ENCODER_MULTIPLIER_LINEAR
     while encoder_right <= encoded and encoder_left <= encoded:
         encoder_right, encoder_left = get_encoding()
         #time.sleep(0.02) #Sleep to reduce load on pi
@@ -50,7 +51,7 @@ def turn_anticlockwise(angle_deg):
     BP.set_motor_dps(RIGHT_MOTOR, 100)
 
     #TODO: Properly calibrate the ENCODER_VAL (one for straight line and one for rotation?)
-    encoded = convert_angle_to_distance(angle_deg) * ENCODER_VAL_FOR_ONE_CM
+    encoded = convert_angle_to_distance(angle_deg) * ENCODER_MULTIPLIER_ANGULAR
 
     print(encoded)
 
