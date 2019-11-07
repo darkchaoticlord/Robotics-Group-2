@@ -22,8 +22,6 @@ class Particle:
         self.theta = theta
         self.weight = weight
 
-    #NOTE: THETA has not been capped between 0 and 360 -> will cause problems
-
     def update_linear_motion(self, D, std_dev_e, std_dev_f):
         self.x += (D + self.get_gaussian_error(std_dev_e)) * np.cos(math.radians(self.theta))
         self.y += (D + self.get_gaussian_error(std_dev_e)) * np.sin(math.radians(self.theta))
@@ -54,34 +52,43 @@ class ParticleSet:
     def __str__(self):
         return str([particle.return_tuple() for particle in self.particles])
 
-# class Line:
-#
-#     def __init__(self, start, end):
-#         self.start = start
-#         self.end = end
-#
-#     def __str__(self):
-#         return "({}, {}, {}, {})".format(self.start[0], self.start[1],
-#                                          self.end[0], self.end[1])
+    def resample():
+        new_particle_set = []
+        sum_of_weights = 0
+        for particle in self.particles:
+            #calculate_likelihood(particle, z)
+            sum_of_weights += particle.weight
+
+        # We can skip the normalization stage and instead sample from 0 - sum_of_weights
+        for i in range(NUM_OF_PARTICLES):
+            prob = random.uniform(0, sum_of_weights)
+            running_total = 0
+
+            for particle in self.particles:
+                running_total += particle.weight
+
+                if prob < running_total:
+                    new_particle_set.append(particle)
+
+                elif prob > running_total:
+                    running_total += particle.
+            
+
 
 def calculate_likelihood(particle, z):
     pass
 
 def main():
+    # Seed our Random numbers
+    random.seed()
+
     try:
         mc.init_motors()
         particle_set = ParticleSet([Particle(100,500,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
 
         e, f, g = 2, 1, 2
 
-        # draw grid
-        for x in range(9):
-            value = x * 50 + 100
-            print("drawLine: ({}, 100, {}, 500)".format(value, value))
-
-        for y in range(9):
-            value = y * 50 + 100
-            print("drawLine: (100, {}, 500, {})".format(value, value))
+        # TODO: Draw map
 
         for _ in range(4):
             # Theres a bug that occurs if we dont sleep between 
