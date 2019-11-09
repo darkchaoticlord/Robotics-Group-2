@@ -13,6 +13,8 @@ LEFT_MOTOR = BP.PORT_B
 RIGHT_MOTOR = BP.PORT_A
 NUM_OF_PARTICLES = 100
 
+mymap=[] # list of lines
+
 # Class representing the Particle in our particle filter
 class Particle:
 
@@ -54,23 +56,84 @@ class ParticleSet:
     def __str__(self):
         return str([particle.return_tuple() for particle in self.particles])
 
-# class Line:
-#
-#     def __init__(self, start, end):
-#         self.start = start
-#         self.end = end
-#
-#     def __str__(self):
-#         return "({}, {}, {}, {})".format(self.start[0], self.start[1],
-#                                          self.end[0], self.end[1])
+class Line:
+    
+    # start and end are tuples (x, y) representing coordinates on the map
+    def __init__(self, start, end):
+         self.start = start
+         self.end = end
 
-def calculate_likelihood(particle, z):
+    def distance_from_robot(RobotsPosition):
+        pass
+
+    # returns boolean
+    def line_valid(RobotsPosition):
+        pass
+
+    def __str__(self):
+         return "({}, {}, {}, {})".format(self.start[0], self.start[1],
+                                          self.end[0], self.end[1])
+
+class RobotsPosition:
+    
+    def __init__(self, x, y, theta):
+        self.x = x
+        self.y = y
+        self.theta = theta
+
+    # sets self.x, self.y, self.theta to the  weighted average of the locations in particles, weighted by their corresponding weights
+    def robots_Position(self, particleSet):
+        xs = np.array([ particle.x for particle in particleSet.particles ])
+        ys = np.array([ particle.y for particle in particleSet.particles ])
+        thetas =  np.array([ particle.theta for particle in particleSet.particles ])
+
+        weights = np.array([ particle.weight for particle in particleSet.particles  ])
+        
+        self.x = np.sum( xs * weights ) / NUM_OF_PARTICLES
+        self.y = np.sum( ys * weights ) / NUM_OF_PARTICLES
+        self.theta = np.sum( thetas * weights ) / NUM_OF_PARTICLES
+
+# map is a list of lines
+def distance_to_shortest_valid_line(robotsPosition):
     pass
 
+def calculate_likelihood(particle, z, robotsPosition):
+
+    sigma = 2#cm
+
+    m = distance_to_shortest_valid_line(robotsPosition)
+    return np.exp( - ( ( z - m  ) ** 2 ) / ( 2 * sigma ** 2  )  )
+
 def main():
+ 
+    #line1 = ...
+
+    #mymap = [line1, line2, ... line8]
+
+    #mymap.add_wall((0,0,0,168));        # a
+    #mymap.add_wall((0,168,84,168));     # b
+    #mymap.add_wall((84,126,84,210));    # c
+    #mymap.add_wall((84,210,168,210));   # d
+    #mymap.add_wall((168,210,168,84));   # e
+    #mymap.add_wall((168,84,210,84));    # f
+    #mymap.add_wall((210,84,210,0));     # g
+    #mymap.add_wall((210,0,0,0));        # h
+
+    particle1 = Particle(0, 0, 0, 0.8)
+    particle2 = Particle(100, 90, 180, 0.1)
+    particle3 = Particle(90, 100, 180, 0.1)
+    set = ParticleSet([particle1, particle2, particle3])
+    r = RobotsPosition(0, 0, 0)
+
+    r.robots_Position(set)
+
+    print(r.x)
+    print(r.y)
+    print(r.theta)
+
     try:
         mc.init_motors()
-        particle_set = ParticleSet([Particle(100,500,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
+        particle_set = ParticleSet([Particle(10,10,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
 
         e, f, g = 2, 1, 2
 
