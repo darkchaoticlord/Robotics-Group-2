@@ -56,26 +56,8 @@ class ParticleSet:
     def __str__(self):
         return str([particle.return_tuple() for particle in self.particles])
 
-class Line:
-    
-    # start and end are tuples (x, y) representing coordinates on the map
-    def __init__(self, start, end):
-         self.start = start
-         self.end = end
-
-    def distance_from_robot(RobotsPosition):
-        pass
-
-    # returns boolean
-    def line_valid(RobotsPosition):
-        pass
-
-    def __str__(self):
-         return "({}, {}, {}, {})".format(self.start[0], self.start[1],
-                                          self.end[0], self.end[1])
-
 class RobotsPosition:
-    
+ 
     def __init__(self, x, y, theta):
         self.x = x
         self.y = y
@@ -89,13 +71,56 @@ class RobotsPosition:
 
         weights = np.array([ particle.weight for particle in particleSet.particles  ])
         
-        self.x = np.sum( xs * weights ) / NUM_OF_PARTICLES
-        self.y = np.sum( ys * weights ) / NUM_OF_PARTICLES
-        self.theta = np.sum( thetas * weights ) / NUM_OF_PARTICLES
+        self.x = np.sum( xs * weights ) / xs.shape
+        self.y = np.sum( ys * weights ) / ys.shape
+        self.theta = np.sum( thetas * weights ) / thetas.shape
+
+class Line:
+    
+    # start and end are tuples (x, y) representing coordinates on the map
+    def __init__(self, start, end):
+         self.start = start
+         self.end = end
+
+    def distance_from_robot(RobotsPosition):
+        pass
+
+    # returns boolean
+    def line_valid(self, RobotsPosition):
+        x1 = self.start[0]
+        y1 = self.start[1]
+
+        x2 = self.end[0]
+        y2 = self.end[1]
+
+        m1 = np.tan(RobotsPosition.theta * np.pi / 180)
+        m2 = ( x1 - x2 ) / ( y1 - y2 )
+
+        if m1 == m2:
+            return False
+
+        x = ( RobotsPosition.x * m1 - x1 * m2 - RobotsPosition.y + y1 ) / ( m1 - m2)
+        # y = m1 * x - RobotsPosition.x * m1 + RobotsPosition.y
+        print(RobotsPosition.theta)
+        print(m2)
+        if abs(x - x1) < abs(x1 - x2) and abs(x - x2) < abs(x1-x2):
+            return True
+        
+        return False
+    
+    def __str__(self):
+         return "({}, {}, {}, {})".format(self.start[0], self.start[1],
+                                          self.end[0], self.end[1])
 
 # map is a list of lines
 def distance_to_shortest_valid_line(robotsPosition):
-    pass
+    shortest = 500 # higher than what the sensor can measure
+
+    for line in mymap:
+        if (line.line_valid(robotsPosition) and line.distance_from_robot(robotsPosition) < shortest ):
+            shortest = line.distance_from_robot(robotsPosition)
+
+    return shortest
 
 def calculate_likelihood(particle, z, robotsPosition):
 
@@ -123,14 +148,13 @@ def main():
     particle2 = Particle(100, 90, 180, 0.1)
     particle3 = Particle(90, 100, 180, 0.1)
     set = ParticleSet([particle1, particle2, particle3])
-    r = RobotsPosition(0, 0, 0)
+    r = RobotsPosition(10, 20, 45)
 
     r.robots_Position(set)
 
-    print(r.x)
-    print(r.y)
-    print(r.theta)
-
+    line1 = Line( (50, 50), (90, 10) )
+    print(line1.line_valid(r))
+    '''
     try:
         mc.init_motors()
         particle_set = ParticleSet([Particle(10,10,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
@@ -165,7 +189,7 @@ def main():
 
     except KeyboardInterrupt:
         BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
-
+    '''
 
 if __name__ == "__main__":
     main()
