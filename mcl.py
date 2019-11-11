@@ -33,7 +33,7 @@ class Particle:
 
     def update_rotation_motion(self, alpha, std_dev_g):
         self.theta = (self.theta + alpha + self.get_gaussian_error(std_dev_g)) % 360
-    
+
     def get_gaussian_error(self, std_dev):
         return random.gauss(0, std_dev)
 
@@ -57,7 +57,7 @@ class ParticleSet:
         return str([particle.return_tuple() for particle in self.particles])
 
 class RobotsPosition:
- 
+
     def __init__(self, x, y, theta):
         self.x = x
         self.y = y
@@ -70,25 +70,24 @@ class RobotsPosition:
         thetas =  np.array([ particle.theta for particle in particleSet.particles ])
 
         weights = np.array([ particle.weight for particle in particleSet.particles  ])
-        
+
         self.x = np.sum( xs * weights ) / xs.shape
         self.y = np.sum( ys * weights ) / ys.shape
         self.theta = np.sum( thetas * weights ) / thetas.shape
 
 class Line:
-    
+
     # start and end are tuples (x, y) representing coordinates on the map
     def __init__(self, start, end):
          self.start = start
          self.end = end
 
-    def distance_from_robot(self,RobotsPosition):
+    def distance_from_robot(self, RobotsPosition):
 
         Ax = self.start[0]
         Ay = self.start[1]
         Bx = self.end[0]
         By = self.end[1]
-
 
         x = RobotsPosition.x
         y = RobotsPosition.y
@@ -109,20 +108,31 @@ class Line:
         y2 = self.end[1]
 
         m1 = np.tan(RobotsPosition.theta * np.pi / 180)
-        m2 = ( x1 - x2 ) / ( y1 - y2 )
 
-        if m1 == m2:
+        # Handles vertical lines
+        if ( x1 == x2 ):
+            x = x1
+            y = m1 * x - m1 * RobotsPosition.x + RobotsPosition.y
+
+            segment_distance = (y1 - y2)
+
+            if ( abs( y - y1 ) < segment_distance and abs( y - y2 ) < segment_distance ):
+                return True
+            else:
+                return False
+
+        m2 = ( y1 - y2 ) / ( x1 - x2 )
+
+        if m1 == m2 :
             return False
 
         x = ( RobotsPosition.x * m1 - x1 * m2 - RobotsPosition.y + y1 ) / ( m1 - m2)
-        # y = m1 * x - RobotsPosition.x * m1 + RobotsPosition.y
-        print(RobotsPosition.theta)
-        print(m2)
+
         if abs(x - x1) < abs(x1 - x2) and abs(x - x2) < abs(x1-x2):
             return True
-        
+
         return False
-    
+
     def __str__(self):
          return "({}, {}, {}, {})".format(self.start[0], self.start[1],
                                           self.end[0], self.end[1])
@@ -155,32 +165,22 @@ def main():
     lineF = Line((168,84),(210,84))
     lineG = Line((210,84),(210,0))
     lineH = Line((210,0),(0,0))
-    
+
     mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
-
-    #Note: just for reference, delete after
-
-    #mymap.add_wall((0,0,0,168));        # a
-    #mymap.add_wall((0,168,84,168));     # b
-    #mymap.add_wall((84,126,84,210));    # c
-    #mymap.add_wall((84,210,168,210));   # d
-    #mymap.add_wall((168,210,168,84));   # e
-    #mymap.add_wall((168,84,210,84));    # f
-    #mymap.add_wall((210,84,210,0));     # g
-    #mymap.add_wall((210,0,0,0));        # h
 
     particle1 = Particle(0, 0, 0, 0.8)
     particle2 = Particle(100, 90, 180, 0.1)
     particle3 = Particle(90, 100, 180, 0.1)
     set = ParticleSet([particle1, particle2, particle3])
-    r = RobotsPosition(10, 20, 45)
+    r = RobotsPosition(0, 30, -90)
 
-    r.robots_Position(set)
+    # r.robots_Position(set)
 
     # lineA = Line( (50, 50), (90, 10) )
-    print(lineA.line_valid(r))
+    # print(lineA.line_valid(r))
     # print(r)
-    print(lineB.distance_from_robot(r))
+    # print(lineB.distance_from_robot(r))
+    print(lineH.distance_from_robot( r ))
     '''
     try:
         mc.init_motors()
@@ -198,9 +198,9 @@ def main():
             print("drawLine: (100, {}, 500, {})".format(value, value))
 
         for _ in range(4):
-            # Theres a bug that occurs if we dont sleep between 
-            # commands to the BrickPi. It doesnt register the 
-            # commands we send it and block. Hence the sleeps 
+            # Theres a bug that occurs if we dont sleep between
+            # commands to the BrickPi. It doesnt register the
+            # commands we send it and block. Hence the sleeps
             # in between the commands
             for _ in range(4):
                 D = 10
