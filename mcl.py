@@ -1,17 +1,17 @@
-import brickpi3
+# import brickpi3
 import math
 import time
 import random
 import numpy as np
 import copy
-import motion_commands as mc
+# import motion_commands as mc
 
-BP = brickpi3.BrickPi3()
+# BP = brickpi3.BrickPi3()
 
-ENCODER_VAL_FOR_ONE_CM = 27
-LEFT_MOTOR = BP.PORT_B
-RIGHT_MOTOR = BP.PORT_A
-NUM_OF_PARTICLES = 100
+# ENCODER_VAL_FOR_ONE_CM = 27
+# LEFT_MOTOR = BP.PORT_B
+# RIGHT_MOTOR = BP.PORT_A
+# NUM_OF_PARTICLES = 100
 
 mymap=[] # list of lines
 
@@ -82,7 +82,7 @@ class Line:
          self.start = start
          self.end = end
 
-    def distance_from_robot(RobotsPosition):
+    def distance_from_robot(self,RobotsPosition):
 
         Ax = self.start[0]
         Ay = self.start[1]
@@ -147,14 +147,14 @@ def calculate_likelihood(particle, z, robotsPosition):
 def main():
 
     #The letters correspond to the lines on the map
-    lineA = ((0,0),(0,168))
-    lineB = ((0,168),(84,168))
-    lineC = ((84,126),(84,210))
-    lineD = ((84,210),(168,210))
-    lineE = ((168,210),(168,84))
-    lineF = ((168,84),(210,84))
-    lineG = ((210,84),(210,0))
-    lineH = ((210,0),(0,0))
+    lineA = Line((0,0),(0,168))
+    lineB = Line((0,168),(84,168))
+    lineC = Line((84,126),(84,210))
+    lineD = Line((84,210),(168,210))
+    lineE = Line((168,210),(168,84))
+    lineF = Line((168,84),(210,84))
+    lineG = Line((210,84),(210,0))
+    lineH = Line((210,0),(0,0))
     
     mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
 
@@ -177,8 +177,10 @@ def main():
 
     r.robots_Position(set)
 
-    line1 = Line( (50, 50), (90, 10) )
-    print(line1.line_valid(r))
+    # lineA = Line( (50, 50), (90, 10) )
+    print(lineA.line_valid(r))
+    # print(r)
+    print(lineB.distance_from_robot(r))
     '''
     try:
         mc.init_motors()
