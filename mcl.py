@@ -83,7 +83,22 @@ class Line:
          self.end = end
 
     def distance_from_robot(RobotsPosition):
-        pass
+
+        Ax = self.start[0]
+        Ay = self.start[1]
+        Bx = self.end[0]
+        By = self.end[1]
+
+
+        x = RobotsPosition.x
+        y = RobotsPosition.y
+        cos = np.cos(math.radians(RobotsPosition.theta))
+        sin = np.sin(math.radians(RobotsPosition.theta))
+
+        # m is the distance formula from lecture slides
+        m = ((By-Ay)*(Ax - x) - (Bx-Ax))/((By-Ay)*cos - (Bx-Ax)*sin)
+
+        return m
 
     # returns boolean
     def line_valid(self, RobotsPosition):
@@ -130,10 +145,20 @@ def calculate_likelihood(particle, z, robotsPosition):
     return np.exp( - ( ( z - m  ) ** 2 ) / ( 2 * sigma ** 2  )  )
 
 def main():
- 
-    #line1 = ...
 
-    #mymap = [line1, line2, ... line8]
+    #The letters correspond to the lines on the map
+    lineA = ((0,0),(0,168))
+    lineB = ((0,168),(84,168))
+    lineC = ((84,126),(84,210))
+    lineD = ((84,210),(168,210))
+    lineE = ((168,210),(168,84))
+    lineF = ((168,84),(210,84))
+    lineG = ((210,84),(210,0))
+    lineH = ((210,0),(0,0))
+    
+    mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
+
+    #Note: just for reference, delete after
 
     #mymap.add_wall((0,0,0,168));        # a
     #mymap.add_wall((0,168,84,168));     # b
