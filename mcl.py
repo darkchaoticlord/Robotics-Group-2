@@ -118,8 +118,7 @@ class Line:
         sin = np.sin(math.radians(RobotsPosition.theta))
 
         # m is the distance formula from lecture slides
-        m = ((By-Ay)*(Ax - x) - (Bx-Ax))/((By-Ay)*cos - (Bx-Ax)*sin)
-
+        m = ((By-Ay)*(Ax - x) - (Bx-Ax)*(Ay-y))/((By-Ay)*cos - (Bx-Ax)*sin)
         return m
 
     # returns boolean
