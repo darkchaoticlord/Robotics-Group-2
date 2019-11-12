@@ -59,7 +59,9 @@ class ParticleSet:
             #calculate_likelihood(particle, z)
             sum_of_weights += particle.weight
 
-        # We can skip the normalization stage and instead sample from 0 - sum_of_weights
+        # We can skip the normalization stage and instead sample from 0 to sum_of_weights
+
+        # This runs in O(n^2), but we can use the Alias algorithm to make it in O(n)
         for i in range(NUM_OF_PARTICLES):
             prob = random.uniform(0, sum_of_weights)
             running_total = 0
@@ -67,11 +69,12 @@ class ParticleSet:
             for particle in self.particles:
                 running_total += particle.weight
 
-                if prob < running_total:
+                if prob <= running_total:
                     new_particle_set.append(particle)
+                    break
 
-                elif prob > running_total:
-                    running_total += particle.
+                else
+                    running_total += particle.weight
             
 
 
