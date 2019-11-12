@@ -1,17 +1,15 @@
-# import brickpi3
+import brickpi3
 import math
 import time
 import random
 import numpy as np
 import copy
-# import motion_commands as mc
+import motion_commands as mc
 
-# BP = brickpi3.BrickPi3()
+BP = brickpi3.BrickPi3()
+BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.NXT_ULTRASONIC)
 
-# ENCODER_VAL_FOR_ONE_CM = 27
-# LEFT_MOTOR = BP.PORT_B
-# RIGHT_MOTOR = BP.PORT_A
-# NUM_OF_PARTICLES = 100
+NUM_OF_PARTICLES = 100
 
 mymap=[] # list of lines
 
@@ -54,11 +52,17 @@ class ParticleSet:
     def __str__(self):
         return str([particle.return_tuple() for particle in self.particles])
 
+    def update(z, pose):
+
+        for particle in self.particles:
+            particle.weight *= calculateLikelihood(particle, z, pose)     
+
+
     def resample():
         new_particle_set = []
         sum_of_weights = 0
+
         for particle in self.particles:
-            #calculate_likelihood(particle, z)
             sum_of_weights += particle.weight
 
         # We can skip the normalization stage and instead sample from 0 to sum_of_weights
@@ -72,12 +76,15 @@ class ParticleSet:
                 running_total += particle.weight
 
                 if prob <= running_total:
-                    new_particle_set.append(particle)
+                    new_particle_set.append(Particle(particle.x, particle.y, 1/NUM_OF_PARTICLES))
                     break
 
-                else
+                else:
                     running_total += particle.weight
-            
+
+
+        self.particles = new_particle_set
+
 
 class RobotsPosition:
 
@@ -85,6 +92,54 @@ class RobotsPosition:
         self.x = x
         self.y = y
         self.theta = theta
+
+    # Keep any angle we move through between -pi and pi
+    def normalizePi(self, val):
+        while val <= -math.pi:
+            val += 2*math.pi
+
+        while val >= math.pi:
+            val -= 2*math.pi
+
+        return val
+
+    # Uses the position based path planning equations from lecture 2 to calculate the motion required to reach positon (world_x, world_y)
+    # Returns 3 values: beta = angle to rotate through to point towards desired point, 
+    #                   d = distance to drive to reach desired point, 
+    def calculate_motion(self, world_x, world_y):
+        dx = world_x - self.x
+        dy = world_y - self.y
+
+        alpha = math.atan2(dy, dx)
+
+        beta = self.normalizePi(alpha - self.theta)
+
+        d = math.sqrt(dx**2 + dy**2)
+
+        return (beta, d)
+
+    def navigate_to_waypoint(self, world_x, world_y, particle_set):
+        angle_to_rotate, distance = self.calculate_motion(world_x, world_y)
+
+        e, f, g = 2, 1, 2
+
+        #print("turning: " + str(angle_to_rotate * 180/math.pi))
+        #print("moving: " + str(distance))
+
+        mc.turn(math.degrees(angle_to_rotate))
+        particle_set.update_rotation_motions(math.degrees(angle_to_rotate), g)
+        time.sleep(0.02)
+
+        if(distance < 20):
+            mc.drive_straight(distance)
+            particle_set.update_linear_motions(distance, e, f)
+        else:
+            mc.drive_straight(20)
+            particle_set.update_linear_motions(20, e, f)
+
+
+
+        #print(self.x, self.y, math.degrees(self.theta))
 
     # sets self.x, self.y, self.theta to the  weighted average of the locations in particles, weighted by their corresponding weights
     def robots_Position(self, particleSet):
@@ -98,12 +153,19 @@ class RobotsPosition:
         self.y = np.sum( ys * weights ) / ys.shape
         self.theta = np.sum( thetas * weights ) / thetas.shape
 
+    def reached_waypoint(self, waypoint, tolerance):
+        if(self.x >= waypoint[0]-tolerance and self.x <= waypoint[0]+tolerance and self.y >= waypoint[1]-tolerance and self.y <= waypoint[1]+tolerance):
+            return True
+
+        return False
+
+
 class Line:
 
     # start and end are tuples (x, y) representing coordinates on the map
     def __init__(self, start, end):
-         self.start = start
-         self.end = end
+        self.start = start
+        self.end = end
 
     def distance_from_robot(self, RobotsPosition):
 
@@ -131,7 +193,7 @@ class Line:
 
         m1 = np.tan(RobotsPosition.theta * np.pi / 180)
 
-        # Handles vertical lines
+        #a Handles vertical lines
         if ( x1 == x2 ):
             x = x1
             y = m1 * x - m1 * RobotsPosition.x + RobotsPosition.y
@@ -156,10 +218,10 @@ class Line:
         return False
 
     def __str__(self):
-         return "({}, {}, {}, {})".format(self.start[0], self.start[1],
-                                          self.end[0], self.end[1])
+        return "({}, {}, {}, {})".format(self.start[0], self.start[1],
+                self.end[0], self.end[1])
 
-# map is a list of lines
+        # map is a list of lines
 def distance_to_shortest_valid_line(robotsPosition):
     shortest = 500 # higher than what the sensor can measure
 
@@ -175,6 +237,21 @@ def calculate_likelihood(particle, z, robotsPosition):
 
     m = distance_to_shortest_valid_line(robotsPosition)
     return np.exp( - ( ( z - m  ) ** 2 ) / ( 2 * sigma ** 2  )  )
+
+def get_sensor_reading():
+    # read and display the sensor value
+    # BP.get_sensor retrieves a sensor value.
+    # BP.PORT_1 specifies that we are looking for the value of sensor port 1.
+    # BP.get_sensor returns the sensor value (what we want to display).
+    try:
+        value = BP.get_sensor(BP.PORT_1)
+        print(value)                         # print the distance in CM
+
+    except brickpi3.SensorError as error:
+        print(error)
+
+    return value
+
 
 def main():
     # Seed our Random numbers
@@ -192,48 +269,41 @@ def main():
 
     mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
 
-    particle1 = Particle(0, 0, 0, 0.8)
-    particle2 = Particle(100, 90, 180, 0.1)
-    particle3 = Particle(90, 100, 180, 0.1)
-    set = ParticleSet([particle1, particle2, particle3])
-    r = RobotsPosition(0, 30, -90)
+    waypoints = [(84,30), (180,30), (180,54), (138,54), (138,168), (114,168),(114,84),(84,84),(84,30)]
 
-    # r.robots_Position(set)
+    starting_x = waypoints[0][0]
+    starting_y = waypoints[0][1]
 
-    # lineA = Line( (50, 50), (90, 10) )
-    # print(lineA.line_valid(r))
-    # print(r)
-    # print(lineB.distance_from_robot(r))
-    print(lineH.distance_from_robot( r ))
-    '''
+    # Draw the map
+    pose = RobotsPosition(starting_x, starting_y, 0)
+
+    for i in mymap:
+        print("drawLine:" + str(i))
+
+    particle_set = ParticleSet([Particle(starting_x, starting_y,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
+
     try:
         mc.init_motors()
-        particle_set = ParticleSet([Particle(10,10,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
 
-        e, f, g = 2, 1, 2
 
-        # TODO: Draw map
-
-        for _ in range(4):
+        for i in waypoints[1:]:
             # Theres a bug that occurs if we dont sleep between
             # commands to the BrickPi. It doesnt register the
             # commands we send it and block. Hence the sleeps
             # in between the commands
-            for _ in range(4):
-                D = 10
-                mc.drive_straight(D)
-                particle_set.update_linear_motions(10 * D, e, f)
 
-                #for ps in updated_values:
+            while (not pose.reached_waypoint(i, 5)):
+                pose.navigate_to_waypoint(i[0], i[1], particle_set)
+                distance_reading = get_sensor_reading() 
+                particle_set.update(distance_reading, pose)
+                particle_set.resample()
+                pose.robots_Position(particle_set)
+
                 print("drawParticles: " + str(particle_set))
 
 
-            mc.turn_anticlockwise(90)
-            particle_set.update_rotation_motions(-90, g)
-
     except KeyboardInterrupt:
         BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
-    '''
 
 if __name__ == "__main__":
     main()
