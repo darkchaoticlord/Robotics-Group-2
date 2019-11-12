@@ -7,7 +7,7 @@ import copy
 import motion_commands as mc
 
 BP = brickpi3.BrickPi3()
-BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.NXT_ULTRASONIC)
+first_time = True
 
 NUM_OF_PARTICLES = 100
 
@@ -52,13 +52,13 @@ class ParticleSet:
     def __str__(self):
         return str([particle.return_tuple() for particle in self.particles])
 
-    def update(z, pose):
+    def update(self, z, pose):
 
         for particle in self.particles:
-            particle.weight *= calculateLikelihood(particle, z, pose)     
+            particle.weight *= calculate_likelihood(particle, z, pose)     
 
 
-    def resample():
+    def resample(self):
         new_particle_set = []
         sum_of_weights = 0
 
@@ -76,7 +76,7 @@ class ParticleSet:
                 running_total += particle.weight
 
                 if prob <= running_total:
-                    new_particle_set.append(Particle(particle.x, particle.y, 1/NUM_OF_PARTICLES))
+                    new_particle_set.append(Particle(particle.x, particle.y, particle.theta, 1/NUM_OF_PARTICLES))
                     break
 
                 else:
@@ -239,10 +239,16 @@ def calculate_likelihood(particle, z, robotsPosition):
     return np.exp( - ( ( z - m  ) ** 2 ) / ( 2 * sigma ** 2  )  )
 
 def get_sensor_reading():
+    global first_time
+    if(first_time):
+        BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.NXT_ULTRASONIC)
+        time.sleep(1)
+        first_time = False
     # read and display the sensor value
     # BP.get_sensor retrieves a sensor value.
     # BP.PORT_1 specifies that we are looking for the value of sensor port 1.
     # BP.get_sensor returns the sensor value (what we want to display).
+    value = 0
     try:
         value = BP.get_sensor(BP.PORT_1)
         print(value)                         # print the distance in CM
@@ -290,7 +296,6 @@ def main():
     try:
         mc.init_motors()
 
-
         for i in waypoints[1:]:
             # Theres a bug that occurs if we dont sleep between
             # commands to the BrickPi. It doesnt register the
@@ -299,7 +304,9 @@ def main():
 
             while (not pose.reached_waypoint(i, 5)):
                 pose.navigate_to_waypoint(i[0], i[1], particle_set)
-                distance_reading = get_sensor_reading() 
+
+                distance_reading = get_sensor_reading()
+                    
                 particle_set.update(distance_reading, pose)
                 particle_set.resample()
                 pose.robots_Position(particle_set)
