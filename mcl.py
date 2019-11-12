@@ -191,15 +191,14 @@ class Line:
         x2 = self.end[0]
         y2 = self.end[1]
 
-        m1 = np.tan(RobotsPosition.theta * np.pi / 180)
+        m1 = np.tan((RobotsPosition.theta * np.pi) / 180)
 
         #a Handles vertical lines
         if ( x1 == x2 ):
             x = x1
-            y = m1 * x - m1 * RobotsPosition.x + RobotsPosition.y
+            y = (m1 * x) - (m1 * RobotsPosition.x) + RobotsPosition.y
 
-            segment_distance = (y1 - y2)
-
+            segment_distance = abs(y1 - y2)
             if ( abs( y - y1 ) < segment_distance and abs( y - y2 ) < segment_distance ):
                 return True
             else:
@@ -210,7 +209,7 @@ class Line:
         if m1 == m2 :
             return False
 
-        x = ( RobotsPosition.x * m1 - x1 * m2 - RobotsPosition.y + y1 ) / ( m1 - m2)
+        x = ( (RobotsPosition.x * m1) - (x1 * m2) - RobotsPosition.y + y1 ) / ( m1 - m2)
 
         if abs(x - x1) < abs(x1 - x2) and abs(x - x2) < abs(x1-x2):
             return True
@@ -224,9 +223,10 @@ class Line:
         # map is a list of lines
 def distance_to_shortest_valid_line(robotsPosition):
     shortest = 500 # higher than what the sensor can measure
-
+    
     for line in mymap:
-        if (line.line_valid(robotsPosition) and line.distance_from_robot(robotsPosition) < shortest ):
+        #print(str(line)+' '+str(line.line_valid(robotsPosition)))
+        if (line.line_valid(robotsPosition) and line.distance_from_robot(robotsPosition) < shortest and line.distance_from_robot(robotsPosition) > 0 ):
             shortest = line.distance_from_robot(robotsPosition)
 
     return shortest
@@ -267,15 +267,20 @@ def main():
     lineG = Line((210,84),(210,0))
     lineH = Line((210,0),(0,0))
 
+    global mymap
     mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
 
+
     waypoints = [(84,30), (180,30), (180,54), (138,54), (138,168), (114,168),(114,84),(84,84),(84,30)]
+
 
     starting_x = waypoints[0][0]
     starting_y = waypoints[0][1]
 
+
     # Draw the map
     pose = RobotsPosition(starting_x, starting_y, 0)
+
 
     for i in mymap:
         print("drawLine:" + str(i))
