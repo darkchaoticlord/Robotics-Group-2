@@ -8,8 +8,9 @@ import motion_commands as mc
 
 BP = brickpi3.BrickPi3()
 first_time = True
+scale_factor = 3
 
-NUM_OF_PARTICLES = 100
+NUM_OF_PARTICLES = 500
 
 mymap=[] # list of lines
 
@@ -44,7 +45,7 @@ class Particle:
         return random.gauss(0, std_dev)
 
     def return_tuple(self):
-        return self.x, self.y, self.theta
+        return self.x * scale_factor, self.y * scale_factor, self.theta
 
 class ParticleSet:
 
@@ -214,8 +215,8 @@ class Line:
         return False
 
     def __str__(self):
-        return "({}, {}, {}, {})".format(self.start[0], self.start[1],
-                self.end[0], self.end[1])
+        return "({}, {}, {}, {})".format(self.start[0] * scale_factor, self.start[1] * scale_factor,
+                self.end[0] * scale_factor, self.end[1] * scale_factor)
 
         # map is a list of lines
 def distance_to_shortest_valid_line(robotsPosition):
@@ -230,7 +231,7 @@ def distance_to_shortest_valid_line(robotsPosition):
 
 def calculate_likelihood(particle, z):
 
-    sigma = 2 #cm
+    sigma = 0.5 #cm
 
     m = distance_to_shortest_valid_line(particle)
     return np.exp( - ( ( z - m  ) ** 2 ) / ( 2 * sigma ** 2  )  )
