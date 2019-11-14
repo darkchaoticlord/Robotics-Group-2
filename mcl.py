@@ -10,7 +10,7 @@ BP = brickpi3.BrickPi3()
 first_time = True
 scale_factor = 3
 
-NUM_OF_PARTICLES = 500
+NUM_OF_PARTICLES = 100
 
 mymap=[] # list of lines
 
@@ -45,7 +45,7 @@ class Particle:
         return random.gauss(0, std_dev)
 
     def return_tuple(self):
-        return self.x * scale_factor, self.y * scale_factor, self.theta
+        return (self.x * scale_factor, self.y * scale_factor, math.degrees(self.theta + math.pi))
 
 class ParticleSet:
 
@@ -119,16 +119,27 @@ class RobotsPosition:
 
         return (beta, d)
 
-    def navigate_to_waypoint(self, world_x, world_y, particle_set):
+    def turn_to_waypoint(self, world_x, world_y, particle_set):
+
         angle_to_rotate, distance = self.calculate_motion(world_x, world_y)
-
-        e, f, g = 2, math.radians(1), math.radians(2)
-
         print("turning: " + str(math.degrees(angle_to_rotate)))
+
+        g = math.radians(2)
 
         mc.turn(math.degrees(angle_to_rotate))
         particle_set.update_rotation_motions(angle_to_rotate, g)
         time.sleep(0.02)
+
+    def move_to_waypoint(self, world_x, world_y, particle_set):
+        angle_to_rotate, distance = self.calculate_motion(world_x, world_y)
+
+        e, f, g = 2, math.radians(1), math.radians(2)
+
+        #print("turning: " + str(math.degrees(angle_to_rotate)))
+
+        #mc.turn(math.degrees(angle_to_rotate))
+        #particle_set.update_rotation_motions(angle_to_rotate, g)
+        #time.sleep(0.02)
 
         if(distance < 20):
             mc.drive_straight(distance)
@@ -308,17 +319,39 @@ def main():
             while (not pose.reached_waypoint(x,y,5)):
                 print("Attempting nav to waypoint: " + str(num+2))
 
-                pose.navigate_to_waypoint(x, y, particle_set)
-                pose.update_position(particle_set) # Update using only motion uncertainty
 
+                # Turn and update
+                pose.turn_to_waypoint(x,y, particle_set)
+                pose.update_position(particle_set)
                 distance_reading = get_sensor_reading()
                 print("Sensor reading=" + str(distance_reading))
                     
                 particle_set.update(distance_reading, pose)
-                particle_set.resample()
-                pose.update_position(particle_set) # Update after observation+resampling
 
                 print("drawParticles: " + str(particle_set))
+                particle_set.resample()
+                pose.update_position(particle_set) # Update after observation+resampling
+                time.sleep(1)
+
+                print("drawParticles: " + str(particle_set))
+                time.sleep(1)
+
+
+                # Move straight and update
+                pose.move_to_waypoint(x, y, particle_set)
+                pose.update_position(particle_set) # Update using only motion uncertainty
+                distance_reading = get_sensor_reading()
+                print("Sensor reading=" + str(distance_reading))
+                    
+                particle_set.update(distance_reading, pose)
+
+                print("drawParticles: " + str(particle_set))
+                particle_set.resample()
+                pose.update_position(particle_set) # Update after observation+resampling
+                time.sleep(1) # Let particles get drawn
+
+                print("drawParticles: " + str(particle_set))
+                time.sleep(1)
 
                 print(pose.x, pose.y, math.degrees(pose.theta))
                 print()
