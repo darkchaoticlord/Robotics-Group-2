@@ -272,7 +272,7 @@ def get_sensor_reading():
 
 
 def main():
-<<<<<<< HEAD
+
     # Seed our Random numbers
     random.seed()
 
@@ -289,21 +289,6 @@ def main():
     global mymap
     mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
 
-    particle1 = Particle(0, 0, 0, 0.8)
-    particle2 = Particle(100, 90, 180, 0.1)
-    particle3 = Particle(90, 100, 180, 0.1)
-    set = ParticleSet([particle1, particle2, particle3])
-    r = RobotsPosition(0, 30, -90)
-
-    # r.robots_Position(set)
-
-    # lineA = Line( (50, 50), (90, 10) )
-    # print(lineA.line_valid(r))
-    # print(r)
-    # print(lineB.distance_from_robot(r))
-    print(lineH.distance_from_robot( r ))
-    '''
->>>>>>> d15b51c49ef2c70c6b193c8d238d2592ac1070b5
     try:
         mc.init_motors()
         particle_set = ParticleSet([Particle(10,10,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
