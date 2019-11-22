@@ -105,8 +105,8 @@ class RobotsPosition:
 
 
     # Uses the position based path planning equations from lecture 2 to calculate the motion required to reach positon (world_x, world_y)
-    # Returns 3 values: beta = angle to rotate through to point towards desired point,
-    #                   d = distance to drive to reach desired point,
+    # Returns 3 values: beta = angle to rotate through to point towards desired point, 
+    #                   d = distance to drive to reach desired point, 
     def calculate_motion(self, world_x, world_y):
         dx = world_x - self.x
         dy = world_y - self.y
@@ -158,7 +158,7 @@ class RobotsPosition:
         ys = [ particle.y * particle.weight for particle in particleSet.particles ]
         theta_sin =  [ math.sin(particle.theta) for particle in particleSet.particles ]
         theta_cos =  [ math.cos(particle.theta) for particle in particleSet.particles ]
-
+        
         self.x = sum(xs)
         self.y = sum(ys)
         self.theta = math.atan2(float(sum(theta_sin))/float(NUM_OF_PARTICLES), float(sum(theta_cos))/float(NUM_OF_PARTICLES))
@@ -168,7 +168,7 @@ class RobotsPosition:
             return True
 
         return False
-
+    
 class Line:
 
     # start and end are tuples (x, y) representing coordinates on the map
@@ -232,7 +232,7 @@ class Line:
         # map is a list of lines
 def distance_to_shortest_valid_line(robotsPosition):
     shortest = 500 # higher than what the sensor can measure
-
+    
     for line in mymap:
         #print(str(line)+' '+str(line.line_valid(robotsPosition)))
         if (line.line_valid(robotsPosition) and line.distance_from_robot(robotsPosition) < shortest and line.distance_from_robot(robotsPosition) > 0 ):
@@ -266,13 +266,12 @@ def get_sensor_reading():
             print(error)
 
         time.sleep(0.02)
-
-
+    
+    
     return np.median(values) + 10
 
 
 def main():
-<<<<<<< HEAD
     # Seed our Random numbers
     random.seed()
 
@@ -289,24 +288,6 @@ def main():
     global mymap
     mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
 
-    particle1 = Particle(0, 0, 0, 0.8)
-    particle2 = Particle(100, 90, 180, 0.1)
-    particle3 = Particle(90, 100, 180, 0.1)
-    set = ParticleSet([particle1, particle2, particle3])
-    r = RobotsPosition(0, 30, -90)
-
-    # r.robots_Position(set)
-
-    # lineA = Line( (50, 50), (90, 10) )
-    # print(lineA.line_valid(r))
-    # print(r)
-    # print(lineB.distance_from_robot(r))
-    print(lineH.distance_from_robot( r ))
-    '''
->>>>>>> d15b51c49ef2c70c6b193c8d238d2592ac1070b5
-    try:
-        mc.init_motors()
-        particle_set = ParticleSet([Particle(10,10,0,1/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
 
     waypoints = [(84,30), (180,30), (180,54), (138,54), (138,168), (114,168),(114,84),(84,84),(84,30)]
 
@@ -344,7 +325,7 @@ def main():
                 pose.update_position(particle_set)
                 distance_reading = get_sensor_reading()
                 print("Sensor reading=" + str(distance_reading))
-
+                    
                 particle_set.update(distance_reading, pose)
 
                 print("drawParticles: " + str(particle_set))
@@ -361,7 +342,7 @@ def main():
                 pose.update_position(particle_set) # Update using only motion uncertainty
                 distance_reading = get_sensor_reading()
                 print("Sensor reading=" + str(distance_reading))
-
+                    
                 particle_set.update(distance_reading, pose)
 
                 print("drawParticles: " + str(particle_set))

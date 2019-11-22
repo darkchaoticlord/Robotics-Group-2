@@ -27,7 +27,7 @@ def get_encoding():
 
 # Drive in straight line
 def drive_straight(distance_cm):
-    time.sleep(0.5)
+    time.sleep(0.02)
     reset_encoders()
     encoder_right, encoder_left = get_encoding()
 
@@ -41,13 +41,11 @@ def drive_straight(distance_cm):
     BP.set_motor_dps(RIGHT_MOTOR, 0)
     BP.set_motor_dps(LEFT_MOTOR, 0)
 
-    time.sleep(0.5)
-
 def convert_angle_to_distance(angle_deg):
     return 7 * math.pi / 180 * angle_deg
 
 def turn_anticlockwise(angle_deg):
-    time.sleep(0.5)
+    time.sleep(0.02)
     reset_encoders()
     encoder_right, encoder_left = get_encoding()
 
@@ -62,10 +60,9 @@ def turn_anticlockwise(angle_deg):
 
     BP.set_motor_dps(RIGHT_MOTOR, 0)
     BP.set_motor_dps(LEFT_MOTOR, 0)
-    time.sleep(0.5)
 
 def turn_clockwise(angle_deg):
-    time.sleep(0.5)
+    time.sleep(0.02)
     reset_encoders()
     encoder_right, encoder_left = get_encoding()
 
@@ -80,7 +77,6 @@ def turn_clockwise(angle_deg):
 
     BP.set_motor_dps(RIGHT_MOTOR, 0)
     BP.set_motor_dps(LEFT_MOTOR, 0)
-    time.sleep(0.5)
 
 def turn(angle_deg):
     if(angle_deg == 0):
