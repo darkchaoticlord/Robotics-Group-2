@@ -1,13 +1,13 @@
-import brickpi3
+# import brickpi3
 import math
 import time
 import random
 import numpy as np
 import copy
-import motion_commands as mc
-from sensor_rotate import Sensor
+# import motion_commands as mc
+# from sensor_rotate import Sensor
 
-BP = brickpi3.BrickPi3()
+# BP = brickpi3.BrickPi3()
 first_time = True
 scale_factor = 3
 
@@ -106,8 +106,8 @@ class RobotsPosition:
 
 
     # Uses the position based path planning equations from lecture 2 to calculate the motion required to reach positon (world_x, world_y)
-    # Returns 3 values: beta = angle to rotate through to point towards desired point, 
-    #                   d = distance to drive to reach desired point, 
+    # Returns 3 values: beta = angle to rotate through to point towards desired point,
+    #                   d = distance to drive to reach desired point,
     def calculate_motion(self, world_x, world_y):
         dx = world_x - self.x
         dy = world_y - self.y
@@ -159,7 +159,7 @@ class RobotsPosition:
         ys = [ particle.y * particle.weight for particle in particleSet.particles ]
         theta_sin =  [ math.sin(particle.theta) for particle in particleSet.particles ]
         theta_cos =  [ math.cos(particle.theta) for particle in particleSet.particles ]
-        
+
         self.x = sum(xs)
         self.y = sum(ys)
         self.theta = math.atan2(float(sum(theta_sin))/float(NUM_OF_PARTICLES), float(sum(theta_cos))/float(NUM_OF_PARTICLES))
@@ -169,7 +169,7 @@ class RobotsPosition:
             return True
 
         return False
-    
+
 class Line:
 
     # start and end are tuples (x, y) representing coordinates on the map
@@ -177,36 +177,36 @@ class Line:
         self.start = start
         self.end = end
 
-    def distance_from_robot(self, RobotsPosition):
+    def distance_from_robot(self, particle):
 
         Ax = self.start[0]
         Ay = self.start[1]
         Bx = self.end[0]
         By = self.end[1]
 
-        x = RobotsPosition.x
-        y = RobotsPosition.y
-        cos = np.cos(RobotsPosition.theta)
-        sin = np.sin(RobotsPosition.theta)
+        x = particle.x
+        y = particle.y
+        cos = np.cos(particle.theta)
+        sin = np.sin(particle.theta)
 
         # m is the distance formula from lecture slides
         m = ((By-Ay)*(Ax - x) - (Bx-Ax)*(Ay-y))/((By-Ay)*cos - (Bx-Ax)*sin)
         return m
 
     # returns boolean
-    def line_valid(self, RobotsPosition):
+    def line_valid(self, particle):
         x1 = self.start[0]
         y1 = self.start[1]
 
         x2 = self.end[0]
         y2 = self.end[1]
 
-        m1 = np.tan(RobotsPosition.theta)
+        m1 = np.tan(particle.theta)
 
         #a Handles vertical lines
         if ( x1 == x2 ):
             x = x1
-            y = (m1 * x) - (m1 * RobotsPosition.x) + RobotsPosition.y
+            y = (m1 * x) - (m1 * particle.x) + particle.y
 
             segment_distance = abs(y1 - y2)
             if ( abs( y - y1 ) < segment_distance and abs( y - y2 ) < segment_distance ):
@@ -219,7 +219,7 @@ class Line:
         if m1 == m2 :
             return False
 
-        x = ( (RobotsPosition.x * m1) - (x1 * m2) - RobotsPosition.y + y1 ) / ( m1 - m2)
+        x = ( (particle.x * m1) - (x1 * m2) - particle.y + y1 ) / ( m1 - m2)
 
         if abs(x - x1) < abs(x1 - x2) and abs(x - x2) < abs(x1-x2):
             return True
@@ -230,13 +230,12 @@ class Line:
         return "({}, {}, {}, {})".format(self.start[0] * scale_factor, self.start[1] * scale_factor,
                 self.end[0] * scale_factor, self.end[1] * scale_factor)
 
-def distance_to_shortest_valid_line(robotsPosition):
+def distance_to_shortest_valid_line(particle):
     shortest = 500 # higher than what the sensor can measure
-    
+
     for line in mymap:
-        #print(str(line)+' '+str(line.line_valid(robotsPosition)))
-        if (line.line_valid(robotsPosition) and line.distance_from_robot(robotsPosition) > 0 and line.distance_from_robot(robotsPosition) < shortest):
-            shortest = line.distance_from_robot(robotsPosition)
+        if (line.line_valid(particle) and line.distance_from_robot(particle) > 0 and line.distance_from_robot(particle) < shortest):
+            shortest = line.distance_from_robot(particle)
 
     return shortest
 
@@ -247,7 +246,40 @@ def calculate_likelihood(particle, z):
     m = distance_to_shortest_valid_line(particle)
     return np.exp( - ( ( z - m  ) ** 2 ) / ( 2 * sigma ** 2  )  )
 
+def getExpectedDistanceFromWall( robotsPos ):
+    return distance_to_shortest_valid_line( robotsPos )
 
+def environmentAnomaly( robotsPos, measurement ):
+    return getExpectedDistanceFromWall( robotsPos ) - measurement[ 0 ] > 10
+
+def addVectors( vec1, vec2 ):
+    if len( vec1 ) != len( vec2 ):
+        return None
+    if vec1 == ():
+        return ()
+    return ( vec1[0] + vec2[0], ) + addVectors( vec1[ 1 : ], vec2[ 1 : ] )
+
+def fromPolar( polarCoord ):
+    d = polarCoord[ 0 ]
+    theta = polarCoord[ 1 ]
+
+    return ( d * np.cos( theta ), d * np.sin( theta ) )
+
+# getBottleCoords :: ( [measurement], RobotsPosition, char ) -> position
+# where:
+# measurement = (distance, theta)
+# position = (x, y)
+# distance = float
+# x = float
+# y = float
+# theta = float, 0 <= theta < 2 * pi
+def getBottleCoords( measurements, robotsPos, area ):
+    if len( measurement ) == 0:
+        return False
+    if environmentAnomaly( robotsPos, measurements[ 0 ] ):
+        return addVectors( fromPolar( measurements[ 0 ] ), ( robotsPos[ 0 ], robotsPos[ 1 ] ) )
+    else:
+        return getBottleCoords( measurements[ 1 : ], robotsPos, area )
 
 def mcl_navigate(target_x, target_y, pose, sensor, particle_set):
 
@@ -257,7 +289,7 @@ def mcl_navigate(target_x, target_y, pose, sensor, particle_set):
 
             # Update where we think we are (based off motion uncertainty)
             pose.update_position(particle_set)
-                
+
             # Get a sensor reading
             distances = sensor.spin_and_measure()
 
@@ -279,10 +311,10 @@ def mcl_navigate(target_x, target_y, pose, sensor, particle_set):
 
             # Update where we think we are (based off motion uncertainty)
             pose.update_position(particle_set)
-            
+
             # Get a sensor reading
             distances = sensor.spin_and_measure()
-            
+
             # Update the particle set using the measurement
             particle_set.update(distance_reading, pose)
 
@@ -298,13 +330,14 @@ def mcl_navigate(target_x, target_y, pose, sensor, particle_set):
 
 
             # Print where the robot thinks it is after a single rotation + motion cycle
-            print(pose.x, pose.y, math.degrees(pose.theta))
-            print()
+            # print(pose.x, pose.y, math.degrees(pose.theta))
+            # print()
 
 
 def main():
     # Seed our Random numbers
     random.seed()
+
 
     #The letters correspond to the lines on the map
     lineA = Line((0,0),(0,168))
@@ -316,16 +349,20 @@ def main():
     lineG = Line((210,84),(210,0))
     lineH = Line((210,0),(0,0))
 
+
     global mymap
     mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
+
+    # def getBottleCoords( measurements, robotsPos, area ):
+    print( getBottleCoords( [(200, 5), (200, 3), (180, 0) ], RobotsPosition(10,10,0), 'A' ) )
 
     starting_x = 84
     starting_y = 30
 
 
     # Draw the map
-    for i in mymap:
-        print("drawLine:" + str(i))
+    # for i in mymap:
+    #     print("drawLine:" + str(i))
 
     # Setup all the necessary components
     pose = RobotsPosition(starting_x, starting_y, 0)
@@ -334,9 +371,9 @@ def main():
     mc.init_motors()
 
     try:
-        #mcl_navigate(target_x, target_y, pose, sensor, particle_set)
+        mcl_navigate(target_x, target_y, pose, sensor, particle_set)
 
-    excep KeyboardInterrupt:
+    except KeyboardInterrupt:
         BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
 
 if __name__ == "__main__":
