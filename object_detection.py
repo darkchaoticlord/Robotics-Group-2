@@ -257,7 +257,7 @@ def addVectors( vec1, vec2 ):
         return None
     if vec1 == ():
         return ()
-    return ( vec1[0] + vec2[0], ) + addVectors( vec1[ 1 : ], vec2[ 1 : ] )
+    return ( vec1[0] + vec2[0] ) + addVectors( vec1[ 1 : ], vec2[ 1 : ] )
 
 def fromPolar( polarCoord ):
     d = polarCoord[ 0 ]
@@ -265,7 +265,7 @@ def fromPolar( polarCoord ):
 
     return ( d * np.cos( theta ), d * np.sin( theta ) )
 
-def inValidArea( robotsPos, area ):
+def inValidArea( bottlePos, area ):
     # Range of the three areas
     A_x = range(120, 210) #I have added 120 approximately
     A_y = range(0, 84)
@@ -274,11 +274,11 @@ def inValidArea( robotsPos, area ):
     C_x = range(0, 84)
     C_y = range(40, 168) #I have added 40 approximately
     
-    if area == 'A' and robotsPos.x in A_x and robotsPos.y in A_y:
+    if area == 'A' and bottlePos[0] in A_x and bottlePos[1] in A_y:
         return True
-    elif area == 'B' and robotsPos.x in B_x and robotsPos.y in B_y:
+    elif area == 'B' and bottlePos[0] in B_x and bottlePos[1] in B_y:
         return True
-    elif area == 'C' and robotsPos.x in C_x and robotsPos.y in C_y:
+    elif area == 'C' and bottlePos[0] in C_x and bottlePos[1] in C_y:
         return True
     else:
         return False 
@@ -295,10 +295,14 @@ def inValidArea( robotsPos, area ):
 def getBottleCoords( measurements, robotsPos, area, continuous_count=0 ):
     if len( measurements ) == 0:
         return False
-    if environmentAnomaly( robotsPos, measurements[ 0 ] ) and inValidArea( robotsPos, area ):
+    if environmentAnomaly( robotsPos, measurements[ 0 ] ):
         continuous_count += 1
         if continuous_count == 3:
-            return addVectors( fromPolar( measurements[ 0 ] ), ( robotsPos.x, robotsPos.y ) )
+            bottlePos = addVectors( fromPolar( measurements[ 0 ] ), ( robotsPos.x, robotsPos.y ) )
+            if inValidArea( bottlePos, area ):
+                return bottlePos
+            else:
+                return getBottleCoords( measurements[ 1 : ], robotsPos, area )
         else:
             return getBottleCoords( measurements[ 1 : ], robotsPos, area, continuous_count )
     else:
