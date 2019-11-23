@@ -265,6 +265,24 @@ def fromPolar( polarCoord ):
 
     return ( d * np.cos( theta ), d * np.sin( theta ) )
 
+def inValidArea( robotsPos, area ):
+    # Range of the three areas
+    A_x = range(120, 210) #I have added 120 approximately
+    A_y = range(0, 84)
+    B_x = range(84, 168)
+    B_y = range(84, 210)
+    C_x = range(0, 84)
+    C_y = range(40, 168) #I have added 40 approximately
+    
+    if area == 'A' and robotsPos.x in A_x and robotsPos.y in A_y:
+        return True
+    elif area == 'B' and robotsPos.x in B_x and robotsPos.y in B_y:
+        return True
+    elif area == 'C' and robotsPos.x in C_x and robotsPos.y in C_y:
+        return True
+    else:
+        return False 
+
 # getBottleCoords :: ( [measurement], RobotsPosition, char ) -> position
 # where:
 # measurement = (distance, theta)
@@ -273,11 +291,16 @@ def fromPolar( polarCoord ):
 # x = float
 # y = float
 # theta = float, 0 <= theta < 2 * pi
-def getBottleCoords( measurements, robotsPos, area ):
-    if len( measurement ) == 0:
+# continuous_count = int -> if continuous anomaly then return vector, default is zero
+def getBottleCoords( measurements, robotsPos, area, continuous_count=0 ):
+    if len( measurements ) == 0:
         return False
-    if environmentAnomaly( robotsPos, measurements[ 0 ] ):
-        return addVectors( fromPolar( measurements[ 0 ] ), ( robotsPos[ 0 ], robotsPos[ 1 ] ) )
+    if environmentAnomaly( robotsPos, measurements[ 0 ] ) and inValidArea( robotsPos, area ):
+        continuous_count += 1
+        if continuous_count == 3:
+            return addVectors( fromPolar( measurements[ 0 ] ), ( robotsPos.x, robotsPos.y ) )
+        else:
+            return getBottleCoords( measurements[ 1 : ], robotsPos, area, continuous_count )
     else:
         return getBottleCoords( measurements[ 1 : ], robotsPos, area )
 
