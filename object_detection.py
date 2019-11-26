@@ -246,18 +246,19 @@ def calculate_likelihood(particle, z):
     m = distance_to_shortest_valid_line(particle)
     return np.exp( - ( ( z - m  ) ** 2 ) / ( 2 * sigma ** 2  )  )
 
-def getExpectedDistanceFromWall( robotsPos ):
-    return distance_to_shortest_valid_line( robotsPos )
+def getExpectedDistanceFromWall( particle ):
+    return distance_to_shortest_valid_line( particle )
 
 def environmentAnomaly( robotsPos, measurement ):
-    return getExpectedDistanceFromWall( robotsPos ) - measurement[ 0 ] > 10
+    return getExpectedDistanceFromWall( Particle( robotsPos.x, robotsPos.y, measurement[1], 0 ) ) - measurement[ 0 ] > 10
 
 def addVectors( vec1, vec2 ):
     if len( vec1 ) != len( vec2 ):
         return None
     if vec1 == ():
         return ()
-    return ( vec1[0] + vec2[0] ) + addVectors( vec1[ 1 : ], vec2[ 1 : ] )
+
+    return ( vec1[0] + vec2[0], ) + addVectors( vec1[ 1 : ], vec2[ 1 : ] )
 
 def fromPolar( polarCoord ):
     d = polarCoord[ 0 ]
@@ -265,7 +266,8 @@ def fromPolar( polarCoord ):
 
     return ( d * np.cos( theta ), d * np.sin( theta ) )
 
-def inValidArea( bottlePos, area ):
+def ValidArea( bottlePos, area ):
+    bottlePos = ( int(bottlePos[0]), int(bottlePos[1]) )
     # Range of the three areas
     A_x = range(120, 210) #I have added 120 approximately
     A_y = range(0, 84)
@@ -273,7 +275,7 @@ def inValidArea( bottlePos, area ):
     B_y = range(84, 210)
     C_x = range(0, 84)
     C_y = range(40, 168) #I have added 40 approximately
-    
+
     if area == 'A' and bottlePos[0] in A_x and bottlePos[1] in A_y:
         return True
     elif area == 'B' and bottlePos[0] in B_x and bottlePos[1] in B_y:
@@ -281,7 +283,7 @@ def inValidArea( bottlePos, area ):
     elif area == 'C' and bottlePos[0] in C_x and bottlePos[1] in C_y:
         return True
     else:
-        return False 
+        return False
 
 # getBottleCoords :: ( [measurement], RobotsPosition, char ) -> position
 # where:
@@ -292,14 +294,23 @@ def inValidArea( bottlePos, area ):
 # y = float
 # theta = float, 0 <= theta < 2 * pi
 # continuous_count = int -> if continuous anomaly then return vector, default is zero
+
+# NOTE:
+    # The orientation of the robot is not taken into account in this function
+    # Only the orientation of the measurements are used.
+    # The angle of the measurements is expexted to be the angle from the x-axis
+    # (not relative to the orientation of the robot)
+
 def getBottleCoords( measurements, robotsPos, area, continuous_count=0 ):
     if len( measurements ) == 0:
-        return False
+        return ()
     if environmentAnomaly( robotsPos, measurements[ 0 ] ):
         continuous_count += 1
         if continuous_count == 3:
-            bottlePos = addVectors( fromPolar( measurements[ 0 ] ), ( robotsPos.x, robotsPos.y ) )
-            if inValidArea( bottlePos, area ):
+            bottlePos = addVectors( fromPolar( measurements[ 0 ] ), ( float(robotsPos.x), float(robotsPos.y) ) )
+            print(fromPolar( measurements[ 0 ] ))
+            print(( float(robotsPos.x), float(robotsPos.y) ))
+            if ValidArea( bottlePos, area ):
                 return bottlePos
             else:
                 return getBottleCoords( measurements[ 1 : ], robotsPos, area )
@@ -380,8 +391,9 @@ def main():
     global mymap
     mymap = [lineA, lineB, lineC, lineD, lineE, lineF, lineG, lineH]
 
+    # print(distance_to_shortest_valid_line(Particle(160,74, -0.674, 0)))
     # def getBottleCoords( measurements, robotsPos, area ):
-    print( getBottleCoords( [(200, 5), (200, 3), (180, 0) ], RobotsPosition(10,10,0), 'A' ) )
+    print( getBottleCoords( [(80, -0.674), (80, -0.674), (40, -0.674), (40, -0.674), (40, -0.674) ], RobotsPosition(160,74, None ), 'A' ) )
 
     starting_x = 84
     starting_y = 30
@@ -392,16 +404,16 @@ def main():
     #     print("drawLine:" + str(i))
 
     # Setup all the necessary components
-    pose = RobotsPosition(starting_x, starting_y, 0)
-    sensor = Sensor(BP.PORT_C, BP.PORT_1)
-    particle_set = ParticleSet([Particle(starting_x, starting_y,0,1.0/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
-    mc.init_motors()
+    # pose = RobotsPosition(starting_x, starting_y, 0)
+    # sensor = Sensor(BP.PORT_C, BP.PORT_1)
+    # particle_set = ParticleSet([Particle(starting_x, starting_y,0,1.0/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
+    # mc.init_motors()
 
-    try:
-        mcl_navigate(target_x, target_y, pose, sensor, particle_set)
-
-    except KeyboardInterrupt:
-        BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
+    # try:
+    #     mcl_navigate(target_x, target_y, pose, sensor, particle_set)
+    #
+    # except KeyboardInterrupt:
+    #     BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
 
 if __name__ == "__main__":
     main()
