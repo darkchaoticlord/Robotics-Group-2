@@ -4,10 +4,10 @@ import time
 import random
 import numpy as np
 import copy
-# import motion_commands as mc
-# from sensor_rotate import Sensor
+import motion_commands as mc
+from sensor_rotate import Sensor
 
-# BP = brickpi3.BrickPi3()
+BP = brickpi3.BrickPi3()
 first_time = True
 scale_factor = 3
 
@@ -368,9 +368,22 @@ def mcl_navigate(target_x, target_y, pose, sensor, particle_set):
 
 
             # Print where the robot thinks it is after a single rotation + motion cycle
-            # print(pose.x, pose.y, math.degrees(pose.theta))
-            # print()
+            print(pose.x, pose.y, math.degrees(pose.theta))
+            print()
 
+def bottleNavigation(pose, sensor, particleSet):
+
+    areas = [ 'A', 'B', 'C' ]
+    outsideAreasCoords = [ ( 120, 30 ), (120, 84), (84, 84) ]
+
+    mcl_navigate( outsideAreasCoords[0][0], outsideAreasCoords[0][1], pose, sensor, particleSet )
+
+    measurements = sensor.spin_and_measure()[ 90 : 270]
+
+    bottleCoords = getBottleCoords( measurements, pose, 'A' )
+    print(bottleCoords)
+
+    mcl_navigate( bottleCoords[0], bottleCoords[1], pose, sensor, particleSet )
 
 def main():
     # Seed our Random numbers
@@ -393,27 +406,27 @@ def main():
 
     # print(distance_to_shortest_valid_line(Particle(160,74, -0.674, 0)))
     # def getBottleCoords( measurements, robotsPos, area ):
-    print( getBottleCoords( [(80, -0.674), (80, -0.674), (40, -0.674), (40, -0.674), (40, -0.674) ], RobotsPosition(160,74, None ), 'A' ) )
+    # print( getBottleCoords( [(80, -0.674), (80, -0.674), (40, -0.674), (40, -0.674), (40, -0.674) ], RobotsPosition(160,74, None ), 'A' ) )
 
     starting_x = 84
     starting_y = 30
 
 
-    # Draw the map
-    # for i in mymap:
-    #     print("drawLine:" + str(i))
+    Draw the map
+    for i in mymap:
+        print("drawLine:" + str(i))
 
     # Setup all the necessary components
-    # pose = RobotsPosition(starting_x, starting_y, 0)
-    # sensor = Sensor(BP.PORT_C, BP.PORT_1)
-    # particle_set = ParticleSet([Particle(starting_x, starting_y,0,1.0/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
-    # mc.init_motors()
+    pose = RobotsPosition(starting_x, starting_y, 0)
+    sensor = Sensor(BP.PORT_C, BP.PORT_1)
+    particle_set = ParticleSet([Particle(starting_x, starting_y,0,1.0/NUM_OF_PARTICLES) for _ in range(NUM_OF_PARTICLES)])
+    mc.init_motors()
 
-    # try:
-    #     mcl_navigate(target_x, target_y, pose, sensor, particle_set)
-    #
-    # except KeyboardInterrupt:
-    #     BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
+    try:
+        bottleNavigation(pose, sensor, particle_set)
+
+    except KeyboardInterrupt:
+        BP.reset_all() # This will prevent the robot moving if the program is interrupted or exited
 
 if __name__ == "__main__":
     main()
